@@ -1,0 +1,10 @@
+services:
+  mysql:
+    image: 'mysql:8.0.33'
+    environment:
+      - 'MYSQL_DATABASE=expenses_db'
+      - 'MYSQL_USER=application'
+      - 'MYSQL_PASSWORD=secret'
+      - 'MYSQL_ROOT_PASSWORD=verysecret'
+    ports:
+      - '3306:3306'
