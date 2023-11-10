@@ -31,5 +31,5 @@ jobs:
           cache: maven
 
       - name: Build 'accounts' service
-        run: ./accounts/mvnw --batch-mode --update-snapshots  clean package -f accounts/pom.xml
+        run: ./accounts/mvnw --batch-mode --update-snapshots  clean verify -f accounts/pom.xml
 
