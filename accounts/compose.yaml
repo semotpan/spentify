@@ -1,10 +1,9 @@
 services:
-  mysql:
-    image: 'mysql:8.0.33'
+  postgres:
+    image: 'postgres:16'
     environment:
-      - 'MYSQL_DATABASE=accounts_db'
-      - 'MYSQL_USER=application'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
+      - 'POSTGRES_DB=accounts_db'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_USER=myusapplicationer'
     ports:
-      - '3306:3306'
+      - '5432:5432'
