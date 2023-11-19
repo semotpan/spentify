@@ -1,0 +1,28 @@
+{
+  "name": "accounts-outbox-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "plugin.name": "pgoutput",
+    "database.user": "${file:/etc/secrets/postgres.properties:user}",
+    "database.password": "${file:/etc/secrets/postgres.properties:password}",
+    "database.dbname": "${file:/etc/secrets/postgres.properties:dbname}",
+    "database.port": "5432",
+    "database.hostname": "postgres",
+    "schema.include.list": "public",
+    "table.include.list": "public.outbox_event",
+    "include.schema.changes": "false",
+    "topic.prefix": "accounts",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false",
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+    "transforms.outbox.table.field.event.key": "aggregate_id",
+    "transforms.outbox.table.field.event.id": "id",
+    "transforms.outbox.table.field.event.payload": "payload",
+    "transforms.outbox.route.by.field": "aggregate_type",
+    "transforms.outbox.route.topic.replacement": "accounts.outbox.events"
+  }
+}

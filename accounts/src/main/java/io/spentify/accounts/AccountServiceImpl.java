@@ -12,15 +12,19 @@ import org.springframework.transaction.annotation.Transactional;
 class AccountServiceImpl implements AccountService {
 
     private final Accounts accounts;
+    private final EventPublisher eventPublisher;
 
     @Override
-    public Account.AccountIdentifier create(CreateAccountCommand command) {
+    public Account create(CreateAccountCommand command) {
         requireUniqueEmailAddress(command.emailAddress);
 
         var account = new Account(command.firstName, command.lastName, new EmailAddress(command.emailAddress));
         accounts.save(account);
 
-        return account.getId();
+        eventPublisher.publish(account.getDomainEvents());
+        account.clearEvents();
+
+        return account;
     }
 
     private void requireUniqueEmailAddress(String emailAddress) {
