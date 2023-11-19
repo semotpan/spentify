@@ -20,28 +20,43 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import static io.spentify.accounts.web.ApiErrorResponse.*;
 
+/**
+ * Global exception handler for the API, providing customized responses for various exceptions.
+ */
 @Slf4j
 @RestControllerAdvice
 public final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+    /**
+     * Handles exceptions related to unreadable HTTP messages, typically caused by malformed JSON requests.
+     */
     @Override
     protected ResponseEntity handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers,
                                                           HttpStatusCode status, WebRequest request) {
         return badRequest("Malformed JSON request", ex.getMessage());
     }
 
+    /**
+     * Handles exceptions related to type mismatches in HTTP requests.
+     */
     @Override
     protected ResponseEntity handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
                                                 HttpStatusCode status, WebRequest request) {
         return badRequest("Type mismatch request", ex.getMessage());
     }
 
+    /**
+     * Handles exceptions when no handler is found for a given HTTP request.
+     */
     @Override
     protected ResponseEntity handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers,
                                                            HttpStatusCode status, WebRequest request) {
         return notFound("Resource '" + ex.getRequestURL() + "' not found", ex.getMessage());
     }
 
+    /**
+     * Handles exceptions related to unsupported HTTP request methods.
+     */
     @Override
     protected ResponseEntity handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex,
                                                                  HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -54,12 +69,18 @@ public final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return methodNotAllowed(headers, "Request method '" + ex.getMethod() + "' is not supported", ex.getMessage());
     }
 
+    /**
+     * Handles exceptions related to unacceptable HTTP media types.
+     */
     @Override
     protected ResponseEntity handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex, HttpHeaders headers,
                                                               HttpStatusCode status, WebRequest request) {
         return notAcceptable("Could not find acceptable representation", ex.getMessage());
     }
 
+    /**
+     * Handles exceptions related to unsupported HTTP media types.
+     */
     @Override
     protected ResponseEntity handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, HttpHeaders headers,
                                                              HttpStatusCode status, WebRequest request) {
@@ -71,11 +92,17 @@ public final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return unsupportedMediaType(headers, "Content type '" + ex.getContentType() + "' is not supported", ex.getMessage());
     }
 
+    /**
+     * Handles the {@link EmailAlreadyExists} exception, returning a conflict response.
+     */
     @ExceptionHandler(value = EmailAlreadyExists.class)
     ResponseEntity<?> handle(EmailAlreadyExists ex) {
         return conflict(ex.getMessage());
     }
 
+    /**
+     * Handles {@link ConstraintViolationException}, converting constraint violations into a list of API error fields.
+     */
     @ExceptionHandler(value = ConstraintViolationException.class)
     ResponseEntity<?> handle(ConstraintViolationException ex) {
         var apiErrors = ex.getConstraintViolations().stream()
@@ -84,6 +111,9 @@ public final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return unprocessableEntity(apiErrors, "Schema validation failure");
     }
 
+    /**
+     * Handles unexpected exception, internal server error response.
+     */
     @ExceptionHandler(Throwable.class)
     ResponseEntity<ApiErrorResponse> handleThrowable(Throwable throwable) {
         log.error("Request handling failed", throwable);

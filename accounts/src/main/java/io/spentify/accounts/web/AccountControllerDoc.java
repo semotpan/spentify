@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import static org.springframework.http.HttpHeaders.LOCATION;
 
-public interface AccountControllerDoc {
+interface AccountControllerDoc {
 
     String TAG = "accounts";
 

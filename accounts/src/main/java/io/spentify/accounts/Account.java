@@ -8,6 +8,8 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
@@ -15,16 +17,22 @@ import static java.util.regex.Pattern.compile;
 import static lombok.AccessLevel.PRIVATE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+/**
+ * <p>The account entity is used to model user information and includes validation checks for various properties.</p>
+ */
 @Entity
 @Table(name = "accounts")
 @Getter
+@EqualsAndHashCode
+@NoArgsConstructor(access = PRIVATE)
 @ToString
-@EqualsAndHashCode(callSuper = false)
-@NoArgsConstructor(access = PRIVATE, force = true)
 public final class Account {
 
     static final String patternRFC5322 = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
     static final int MAX_LENGTH = 100;
+
+    @ToString.Exclude
+    private final transient List<DomainEvent> domainEvents = new ArrayList<>();
 
     private @EmbeddedId AccountIdentifier id;
     private @Embedded EmailAddress emailAddress;
@@ -42,8 +50,20 @@ public final class Account {
         requireNonBlank(lastName, "lastName cannot be blank");
         requireNonOverflow(lastName, "lastName overflow, max length allowed '%d'".formatted(MAX_LENGTH));
         this.lastName = lastName.trim();
+
+        domainEvents.add(new AccountCreated(this));
     }
 
+    /**
+     * Clears any domain events associated with this account.
+     */
+    public void clearEvents() {
+        this.domainEvents.clear();
+    }
+
+    /**
+     * Represents the identifier of an {@link Account}.
+     */
     @Embeddable
     public record AccountIdentifier(UUID id) implements Serializable {
 
@@ -57,6 +77,9 @@ public final class Account {
         }
     }
 
+    /**
+     * Represents the email address of an {@code Account}.
+     */
     @Embeddable
     public record EmailAddress(String emailAddress) implements Serializable {
 

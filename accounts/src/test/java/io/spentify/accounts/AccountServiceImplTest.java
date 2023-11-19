@@ -3,6 +3,7 @@ package io.spentify.accounts;
 import io.spentify.accounts.Account.AccountIdentifier;
 import io.spentify.accounts.Account.EmailAddress;
 import jakarta.validation.ConstraintViolationException;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -11,7 +12,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 import static io.spentify.accounts.AccountService.CreateAccountCommand;
 import static java.lang.Boolean.FALSE;
@@ -19,20 +19,21 @@ import static java.lang.Boolean.TRUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Tag("unit")
 class AccountServiceImplTest {
 
     Accounts accounts;
+    EventPublisher eventPublisher;
 
     AccountServiceImpl service;
 
     @BeforeEach
     void setUp() {
         accounts = Mockito.mock(Accounts.class);
-        service = new AccountServiceImpl(accounts);
+        eventPublisher = Mockito.mock(EventPublisher.class);
+        service = new AccountServiceImpl(accounts, eventPublisher);
     }
 
     @ParameterizedTest
@@ -161,18 +162,23 @@ class AccountServiceImplTest {
     @DisplayName("Should create a new account successfully")
     void createNewAccount() {
         // given: a non-existing email address
+        doNothing().when(eventPublisher).publish(anyList());
         when(accounts.existsByEmailAddress(any(EmailAddress.class))).thenReturn(FALSE);
         var command = validAccount().build();
 
         // when
-        var accountIdentifier = service.create(command);
+        var account = service.create(command);
 
         // then
-        assertThat(accountIdentifier).isNotNull();
-        assertThat(accountIdentifier).isInstanceOf(AccountIdentifier.class);
+        assertThat(account).isNotNull();
+        assertThat(account.getId()).isNotNull();
+        assertThat(account)
+                .extracting(Account::getFirstName, Account::getLastName, Account::getEmailAddress)
+                .containsExactly("Jon", "Snow", new EmailAddress("jonsnow@email.me"));
 
         // and
         verify(accounts).existsByEmailAddress(any(EmailAddress.class));
+        verify(eventPublisher).publish(anyList());
     }
 
     private CreateAccountCommand.CreateAccountCommandBuilder validAccount() {

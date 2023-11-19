@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentRequest;
@@ -27,9 +29,14 @@ final class AccountController implements AccountControllerDoc {
                 .lastName(resource.lastName())
                 .emailAddress(resource.emailAddress())
                 .build();
-        var accountIdentifier = accountService.create(command);
-        return created(fromCurrentRequest().path("/{id}").build(accountIdentifier.id())).build();
+        var account = accountService.create(command);
+        return created(fromCurrentRequest().path("/{id}").build(account.getId().id()))
+                .body(new AccountResource(
+                        account.getId().id(),
+                        account.getFirstName(),
+                        account.getLastName(),
+                        account.getEmailAddress().toString()));
     }
 
-    record AccountResource(String firstName, String lastName, String emailAddress) {}
+    record AccountResource(UUID accountId, String firstName, String lastName, String emailAddress) {}
 }
