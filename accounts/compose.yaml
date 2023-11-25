@@ -18,7 +18,7 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.1
-    container_name: zookeeper-accounts
+    container_name: zookeeper
     restart: unless-stopped
     ports:
       - "2181:2181"
@@ -29,7 +29,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.4.1
-    container_name: kafka-accounts
+    container_name: kafka
     restart: unless-stopped
     depends_on:
       - zookeeper
@@ -46,7 +46,7 @@ services:
 
   debezium:
     image: quay.io/debezium/connect:2.4.1.Final
-    container_name: debezium-accounts
+    container_name: debezium
     environment:
       BOOTSTRAP_SERVERS: kafka:9092
       CONNECT_REST_PORT: 8083
@@ -62,13 +62,13 @@ services:
     ports:
       - "8083:8083"
     volumes:
-      - "./connector/secrets:/etc/secrets"
+      - "./src/main/resources/connector/secrets:/etc/secrets"
     healthcheck:
       test: "curl -f http://localhost:$$CONNECT_REST_PORT || exit 1"
 
   kafka-connect-ui:
     image: landoop/kafka-connect-ui:0.9.7
-    container_name: kafka-connect-ui-accounts
+    container_name: kafka-connect-ui
     restart: unless-stopped
     depends_on:
       - debezium
@@ -92,3 +92,6 @@ services:
       KAFKA_BROKERCONNECT: kafka:9092
     healthcheck:
       test: "curl -f http://localhost:9000 || exit 1"
+
+networks:
+  spentify-network:
