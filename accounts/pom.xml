@@ -19,6 +19,7 @@
         <springdoc.version>2.2.0</springdoc.version>
         <hypersistence-utils-hibernate-62.version>3.6.1</hypersistence-utils-hibernate-62.version>
         <version.debezium>2.4.1.Final</version.debezium>
+        <jib-maven-plugin.version>3.4.0</jib-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -136,6 +137,9 @@
                     <image>
                         <builder>paketobuildpacks/builder-jammy-base:latest</builder>
                     </image>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -175,6 +179,32 @@
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
                     </includes>
+                </configuration>
+            </plugin>
+            <!-- Docker image build -->
+            <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>${jib-maven-plugin.version}</version>
+                <configuration>
+                    <from>
+                        <image>openjdk:21</image>
+                    </from>
+                    <to>
+                        <tags>
+                            <tag>latest</tag>
+                            <!--provided by <io.github.git-commit-id> (META-INF/git.properties)-->
+                            <tag>${git.commit.id}</tag>
+                        </tags>
+                    </to>
+                    <container>
+                        <format>OCI</format>
+                        <creationTime>${maven.build.timestamp}</creationTime>
+                    </container>
                 </configuration>
             </plugin>
         </plugins>

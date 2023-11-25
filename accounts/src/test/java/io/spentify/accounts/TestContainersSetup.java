@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 
 @DirtiesContext
 @Testcontainers
+@TestPropertySource(locations = "/application-test.properties")
 public abstract class TestContainersSetup {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestContainersSetup.class);
