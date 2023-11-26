@@ -55,14 +55,12 @@ set up. See [jib-doc](https://github.com/GoogleContainerTools/jib/tree/master/ji
 #### Required Tools
 
 * `Java 21`
-* `Docker`
-* `Docker-Compose`
+* `Docker`, `Docker-Compose`
 
 #### Run locally using mvn and docker-compose (default environment variables)
 
-* `./mvnw -Dspring.docker.compose.enabled=true -Dkafka.topic.outbox.events.replicas=1 spring-boot:run` - it starts the
-  docker-compose using _compose.yaml_ or
-  attaches to the existing service started from _compose.yaml_
+* `./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.docker.compose.enabled=true --kafka.topic.outbox.events.replicas=1"`
+  - it starts the docker-compose using _compose.yaml_ or attaches to the existing service started from _compose.yaml_
 
 #### Testing
 
