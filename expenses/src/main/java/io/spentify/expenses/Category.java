@@ -66,19 +66,6 @@ public final class Category {
         }
     }
 
-    @Embeddable
-    public record AccountIdentifier(UUID id) implements Serializable {
-
-        public AccountIdentifier {
-            requireNonNull(id, "id cannot be null");
-        }
-
-        @Override
-        public String toString() {
-            return id.toString();
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

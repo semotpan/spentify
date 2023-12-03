@@ -1,5 +1,6 @@
 package io.spentify.expenses.web;
 
+import io.spentify.expenses.CategoryAccountNotFound;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -89,6 +90,14 @@ final class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return unsupportedMediaType(headers, "Content type '" + ex.getContentType() + "' is not supported", ex.getMessage());
+    }
+
+    /**
+     * Handles the {@link CategoryAccountNotFound} exception, returning a not found response.
+     */
+    @ExceptionHandler(value = CategoryAccountNotFound.class)
+    ResponseEntity<?> handle(CategoryAccountNotFound ex) {
+        return notFound(ex.getMessage());
     }
 
     /**

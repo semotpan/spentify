@@ -1,6 +1,5 @@
 package io.spentify.expenses;
 
-import io.spentify.expenses.Category.AccountIdentifier;
 import io.spentify.expenses.Failure.FieldViolation;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
