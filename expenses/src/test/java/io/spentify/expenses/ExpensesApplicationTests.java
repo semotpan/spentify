@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @Tag("integration")
 @SpringBootTest(classes = TestExpensesApplication.class)
-class ExpensesApplicationTests {
+class ExpensesApplicationTests extends TestContainersSetup {
 
     @Test
     void contextLoads() {
