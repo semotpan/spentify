@@ -11,4 +11,4 @@
 
 
 ### Run locally using mvn and docker-compose (default environment variables) 
-`./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.docker.compose.enabled=true"`
+`./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.docker.compose.enabled=true --spring.kafka.listener.missing-topics-fatal=false"`
