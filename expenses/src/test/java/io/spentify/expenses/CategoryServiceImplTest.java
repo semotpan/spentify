@@ -1,6 +1,5 @@
 package io.spentify.expenses;
 
-import io.spentify.expenses.Category.AccountIdentifier;
 import io.spentify.expenses.Failure.FieldViolation;
 import io.vavr.control.Either;
 import org.assertj.core.api.Assertions;
@@ -127,7 +126,7 @@ class CategoryServiceImplTest {
 
         // and
         verify(categories).save(captor.capture());
-        
+
         Assertions.assertThat(captor.getValue())
                 .extracting(Category::getAccount, Category::getName)
                 .containsExactly(new AccountIdentifier(accountId), name);

@@ -1,7 +1,6 @@
 package io.spentify.expenses.messaging;
 
 import io.spentify.expenses.*;
-import io.spentify.expenses.Category.AccountIdentifier;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
