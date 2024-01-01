@@ -1,9 +1,6 @@
 package io.spentify.accounts.web;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.spentify.accounts.TestContainersSetup;
-import io.spentify.accounts.messaging.KafkaTopicProperties;
 import org.json.JSONException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -11,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -31,13 +29,17 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 class AccountControllerTest extends TestContainersSetup {
 
+    @Value("${kafka.topic.account.aggregate.name}")
+    String topic;
+
     @Autowired
     TestRestTemplate restTemplate;
 
     @Test
     @DisplayName("Should create a new account successfully")
-    void createNewAccount(@Autowired KafkaTopicProperties outboxEventsTopicProperties) throws Exception {
+    void createNewAccount() throws Exception {
         // given
+        setUpAccountDebeziumConnector(restTemplate, topic);
         var request = newValidCreateAccountRequest();
 
         // when
@@ -51,14 +53,11 @@ class AccountControllerTest extends TestContainersSetup {
 
         // and: {@link AccountCreated} raised to kafka
         try (var consumer = kafkaConsumer()) {
-            consumer.subscribe(List.of(outboxEventsTopicProperties.getName()));
+            consumer.subscribe(List.of(topic));
 
             var changeEvents = drain(consumer, 1);
-            var jsonValue = new ObjectMapper()
-                    .readValue(changeEvents.get(0).value(), JsonNode.class)
-                    .textValue();
 
-            JSONAssert.assertEquals(resp.getBody(), jsonValue, JSONCompareMode.STRICT);
+            JSONAssert.assertEquals(resp.getBody(), changeEvents.getFirst().value(), JSONCompareMode.STRICT);
 
             consumer.unsubscribe();
         }

@@ -1,0 +1,160 @@
+services:
+  ######## kafka cluster ########
+  zookeeper:
+    image: 'confluentinc/cp-zookeeper:7.4.1'
+    container_name: 'zookeeper'
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    networks:
+      - local-network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    healthcheck:
+      test: "echo stat | nc localhost $$ZOOKEEPER_CLIENT_PORT"
+
+  kafka:
+    image: 'confluentinc/cp-kafka:7.4.1'
+    container_name: 'kafka'
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    networks:
+      - local-network
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
+
+  ######## debezium connect (!same for all services) ########
+  connect:
+    image: debezium/strimzi-connect
+    container_name: 'connect'
+    build:
+      context: debezium-strimzi
+    restart: unless-stopped
+    ports:
+      - '8083:8083'
+    depends_on:
+      - kafka
+      - accounts-db
+      - expenses-db
+    volumes:
+      - "./secrets:/etc/secrets"
+    networks:
+      - local-network
+    environment:
+      - KAFKA_LOG4J_OPTS=-Dlog4j.configuration=file:/opt/kafka/config/connect-log4j.properties
+      - KAFKA_CONNECT_BOOTSTRAP_SERVERS=kafka:9092
+      - |
+        KAFKA_CONNECT_CONFIGURATION=
+        key.converter=org.apache.kafka.connect.json.JsonConverter
+        value.converter=org.apache.kafka.connect.json.JsonConverter
+        key.converter.schemas.enable=false
+        value.converter.schemas.enable=false
+        group.id=connect
+        offset.storage.topic=connect-offsets
+        offset.storage.replication.factor=1
+        config.storage.topic=connect-configs
+        config.storage.replication.factor=1
+        status.storage.topic=connect-status
+        status.storage.replication.factor=1
+        config.providers=file
+        config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider
+    command: /opt/kafka/kafka_connect_run.sh
+
+  kafka-connect-ui:
+    image: landoop/kafka-connect-ui:0.9.7
+    container_name: kafka-connect-ui
+    restart: unless-stopped
+    depends_on:
+      - connect
+    ports:
+      - "8086:8000"
+    networks:
+      - local-network
+    environment:
+      CONNECT_URL: http://connect:8083
+      PROXY: "true"
+    healthcheck:
+      test: "wget --quiet --tries=1 --spider http://localhost:8000 || exit 1"
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.30.0
+    container_name: kafdrop
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "9000:9000"
+    networks:
+      - local-network
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+
+  # This "container" is a workaround to register connectors to connect and outbox kafka topics
+  kafka-setup:
+    image: 'confluentinc/cp-kafka:7.4.1'
+    container_name: kafka-setup
+    depends_on:
+      - kafka
+      - connect
+    volumes:
+      - $PWD/connectors:/tmp/connectors
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+                       cub kafka-ready -b kafka:9092 1 20 && \
+                       echo Waiting 20 seconds for Connect to be ready... && \
+                       kafka-topics --create --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --config retention.ms=86400000 --topic account.outbox.events && \
+                       sleep 20 && \
+                       curl -i -X PUT -H Accept:application/json -H Content-Type:application/json http://connect:8083/connectors/accounts-outbox-connector/config -d @/tmp/connectors/accounts-outbox-connector.json
+                  '"
+    environment:
+      # The following settings are listed here only to satisfy the image's requirements.
+      # We override the image's `command` anyways, hence this container will not start a broker.
+      KAFKA_BROKER_ID: ignored
+      KAFKA_ZOOKEEPER_CONNECT: ignored
+    networks:
+      - local-network
+
+  ######## Databases ########
+  accounts-db:
+    image: 'postgres:16'
+    container_name: 'accounts-db'
+    command: "postgres -c wal_level=logical"
+    environment:
+      - POSTGRES_USER=application
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=accountsdb
+      - PGPASSWORD=secret
+    ports:
+      - '5432:5432'
+    networks:
+      - local-network
+    healthcheck:
+      test: "pg_isready -U application -d accountsdb"
+
+  expenses-db:
+    image: 'postgres:16'
+    container_name: 'expenses-db'
+    command: "postgres -c wal_level=logical"
+    environment:
+      - POSTGRES_USER=application
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=expensesdb
+      - PGPASSWORD=secret
+    ports:
+      - '5433:5432'
+    networks:
+      - local-network
+    healthcheck:
+      test: "pg_isready -U application -d expensesdb"
+
+networks:
+  local-network:
+    name: spentify-network
