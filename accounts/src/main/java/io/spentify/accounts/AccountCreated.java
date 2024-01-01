@@ -31,11 +31,11 @@ public final class AccountCreated implements DomainEvent {
     }
 
     public String aggregateType() {
-        return this.getClass().getSimpleName();
+        return this.account.getClass().getSimpleName().toLowerCase();
     }
 
     public String type() {
-        return this.account.getClass().getSimpleName();
+        return this.getClass().getSimpleName();
     }
 
     public JsonNode payload() {

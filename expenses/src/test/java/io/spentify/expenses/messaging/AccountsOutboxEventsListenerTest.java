@@ -31,7 +31,7 @@ class AccountsOutboxEventsListenerTest extends TestContainersSetup {
 
         // when: account create event submitted
         try (var producer = kafkaProducer()) {
-            var record = new ProducerRecord<UUID, Object>("accounts.outbox.events", randomUUID(), accountCreated);
+            var record = new ProducerRecord<UUID, Object>("account.outbox.events", randomUUID(), accountCreated);
             producer.send(record);
             producer.flush();
         }
