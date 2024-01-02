@@ -1,7 +1,9 @@
 package io.spentify.expenses.messaging;
 
 import io.spentify.expenses.*;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -14,24 +16,28 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.spentify.expenses.messaging.AccountsOutboxEventsListener.AccountCreated;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 @Tag("integration")
 @SpringBootTest(classes = TestExpensesApplication.class)
-class AccountsOutboxEventsListenerTest extends TestContainersSetup {
+class AccountsOutboxEventsConsumerTest extends TestContainersSetup {
 
     @Test
-    @DisplayName("Should create default categories on account created event")
+    @DisplayName("should create default categories on account created event")
     void onAccountCreated(@Autowired Categories categories) {
         // given: an account created event
-        var accountCreated = accountCreatedEvent();
+        var event = accountCreatedEvent();
 
         // when: account create event submitted
-        try (var producer = kafkaProducer()) {
-            var record = new ProducerRecord<UUID, Object>("account.outbox.events", randomUUID(), accountCreated);
+        try (KafkaProducer<UUID, AccountCreated> producer = kafkaProducer()) {
+            var record = new ProducerRecord<>("account.outbox.events", randomUUID(), event);
+            record.headers()
+                    .add(new RecordHeader("id", randomUUID().toString().getBytes(UTF_8)))
+                    .add(new RecordHeader("eventType", "AccountCreated".getBytes(UTF_8)));
+
             producer.send(record);
             producer.flush();
         }
@@ -45,7 +51,7 @@ class AccountsOutboxEventsListenerTest extends TestContainersSetup {
 
         // and: expected  default categories for provided account are present
         var expectedCategories = DefaultCategories.asList().stream()
-                .map(c -> tuple(c, new AccountIdentifier(accountCreated.accountId())))
+                .map(c -> tuple(c, new AccountIdentifier(event.accountId())))
                 .collect(Collectors.toList());
 
         assertThat(actualCategories)
