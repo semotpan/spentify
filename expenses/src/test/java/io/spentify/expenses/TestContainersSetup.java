@@ -49,7 +49,7 @@ public abstract class TestContainersSetup {
         registry.add("spring.datasource.password", postgresSQL::getUsername);
     }
 
-    protected KafkaProducer<UUID, Object> kafkaProducer() {
+    protected <T> KafkaProducer<UUID, T> kafkaProducer() {
         return new KafkaProducer<>(Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers()
         ), new UUIDSerializer(), new JsonSerializer<>());
